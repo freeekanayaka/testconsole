@@ -3,14 +3,8 @@ import errno
 
 from six import (
     b,
-    PY2,
-    PY3,
+    BytesIO,
 )
-
-if PY2:
-    from cStringIO import StringIO as BytesIO
-elif PY3:
-    from io import BytesIO
 
 
 class AsyncBytesIO(object):
