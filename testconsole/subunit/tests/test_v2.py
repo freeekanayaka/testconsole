@@ -1,6 +1,8 @@
 import os
 import errno
 
+from six import b
+
 from testtools import TestCase
 from testtools.testresult.doubles import StreamResult
 
@@ -9,7 +11,7 @@ from subunit.v2 import (
     ParseError,
 )
 
-from testconsole.python import AsyncStringIO
+from testconsole.python import AsyncBytesIO
 from testconsole.subunit import AsyncByteStreamToStreamResult
 
 
@@ -18,7 +20,7 @@ class AsyncByteStreamToStreamResultTest(TestCase):
     def setUp(self):
         super(AsyncByteStreamToStreamResultTest, self).setUp()
         self.result = StreamResult()
-        self.stream = AsyncStringIO()
+        self.stream = AsyncBytesIO()
         self.encoder = StreamResultToBytes(self.stream.buffer)
         self.decoder = AsyncByteStreamToStreamResult(self.stream)
         self.decoder.run(self.result)
@@ -68,7 +70,7 @@ class AsyncByteStreamToStreamResultTest(TestCase):
         """
         If unexpected data is found, an error is raised.
         """
-        self.stream.write("boom")
+        self.stream.write(b("boom"))
         self.stream.seek(0)
         error = self.assertRaises(ParseError, self.decoder.do_read)
         self.assertEqual("Invalid packet signature", str(error))

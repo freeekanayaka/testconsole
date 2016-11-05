@@ -1,5 +1,5 @@
-from .io import AsyncStringIO
+from .io import AsyncBytesIO
 
 __all__ = [
-    "AsyncStringIO",
+    "AsyncBytesIO",
 ]

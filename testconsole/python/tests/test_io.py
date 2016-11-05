@@ -1,23 +1,25 @@
 import errno
 
+from six import b
+
 from testtools import TestCase
 
-from testconsole.python import AsyncStringIO
+from testconsole.python import AsyncBytesIO
 
 
-class AsyncStringIOTest(TestCase):
+class AsyncBytesIOTest(TestCase):
 
     def setUp(self):
-        super(AsyncStringIOTest, self).setUp()
-        self.buffer = AsyncStringIO()
+        super(AsyncBytesIOTest, self).setUp()
+        self.buffer = AsyncBytesIO()
 
     def test_read(self):
         """
         Data is read normally if the underlying EOF is not reached.
         """
-        self.buffer.write("foo")
+        self.buffer.write(b("foo"))
         self.buffer.seek(0)
-        self.assertEqual("foo", self.buffer.read(3))
+        self.assertEqual(b("foo"), self.buffer.read(3))
 
     def test_read_egain(self):
         """
@@ -33,4 +35,4 @@ class AsyncStringIOTest(TestCase):
         is set to ``True``, an empty string is returned, signalling the EOF.
         """
         self.buffer.eof = True
-        self.assertEqual("", self.buffer.read(1))
+        self.assertEqual(b(""), self.buffer.read(1))
