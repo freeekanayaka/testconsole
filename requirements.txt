@@ -1,4 +1,4 @@
 pbr
 six
-testtools
 python_subunit
+urwid
