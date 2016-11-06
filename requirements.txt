@@ -2,3 +2,4 @@ pbr
 six
 python_subunit
 urwid
+obsub
