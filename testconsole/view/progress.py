@@ -27,7 +27,7 @@ class Progress(ProgressBar):
             percentage=super(Progress, self).get_text())
 
     def _bind(self):
-        self._repository.on_change_counts += self._sync
+        self._repository.on_counts_change += self._sync
 
     def _sync(self, repository):
         done = float(self._cases_done)

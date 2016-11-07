@@ -4,7 +4,7 @@ from .states import (
     SUCCESS,
 )
 from .testresult import (
-    AsyncStreamToTestRecord,
+    InterimStreamToTestRecord,
     TestRecord,
 )
 
@@ -13,5 +13,5 @@ __all__ = [
     "INPROGRESS",
     "SUCCESS",
     "TestRecord",
-    "AsyncStreamToTestRecord",
+    "InterimStreamToTestRecord",
 ]

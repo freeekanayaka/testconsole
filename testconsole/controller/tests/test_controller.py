@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from six import (
     BytesIO,
     b,
@@ -6,6 +8,8 @@ from six import (
 from subunit.v2 import StreamResultToBytes
 
 from urwid import MainLoop
+
+from testtools.testresult.real import utc
 
 from testconsole.urwid import MemoryWatcher
 from testconsole.testtools import (
@@ -62,22 +66,23 @@ class ControllerTest(ViewTest):
         self.controller.attach(self.loop)
         self.assertEqual(0, self.repository.count_records())
 
-    def test_on_change_details(self):
+    def test_on_record_progress(self):
         """
         When all the packets for a details entry are received, an event is
         triggered by the repository.
         """
-        details = []
+        records = []
 
-        def on_change_details(repository, file_name, detail):
-            details.append((file_name, detail))
+        def on_record_progress(repository, record):
+            records.append(record)
 
-        self.repository.on_change_details += on_change_details
+        self.repository.on_record_progress += on_record_progress
+        self.encoder.status(test_id="foo", test_status=EXISTS)
         self.encoder.status(test_id="foo", test_status=INPROGRESS)
         self.encoder.status(
-            test_id="foo", file_name="log", file_bytes=b("hello"), eof=True)
+            test_id="foo", file_name="log", file_bytes=b("hello"),
+            mime_type="text/x-log", timestamp=datetime.now(utc))
         self.controller.attach(self.loop)
 
-        [(file_name, detail)] = details
-        self.assertEqual("log", file_name)
-        self.assertEqual([b("hello")], list(detail.iter_bytes()))
+        [record] = records
+        self.assertEqual("hello", record.details["log"].as_text())

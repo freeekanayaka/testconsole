@@ -1,6 +1,10 @@
 from urwid import Text
 
-from testconsole.python import MillisecondFormatter
+from logging import Formatter
+
+
+defaultFormatter = Formatter(
+    "%(asctime)s [%(name)s:%(levelname)s] %(message)s")
 
 
 class Logger(Text):
@@ -9,11 +13,6 @@ class Logger(Text):
     It can be used standalone, or has a backend for a ``logging.Handler``
     registered in the stdlib logging system.
     """
-
-    _formatter = MillisecondFormatter(
-        fmt="%(asctime)s [%(name)s:%(levelname)s] %(message)s",
-        datefmt="%H:%M:%S,%f",
-    )
 
     def __init__(self, max_records=None):
         """
@@ -24,7 +23,7 @@ class Logger(Text):
         self.max_records = max_records
 
     def emit(self, record):
-        lines = self.text.split("\n") + [self._formatter.format(record)]
+        lines = self.text.split("\n") + [defaultFormatter.format(record)]
         if lines[0] == "":
             lines.pop(0)
         if self.max_records and len(lines) > self.max_records:

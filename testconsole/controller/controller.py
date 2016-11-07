@@ -1,4 +1,4 @@
-from testconsole.testtools import AsyncStreamToTestRecord
+from testconsole.testtools import InterimStreamToTestRecord
 from testconsole.controller.protocol import SubunitProtocol
 
 
@@ -14,7 +14,7 @@ class Controller(object):
         """
         self._watcher = watcher
         self._repository = repository
-        result = AsyncStreamToTestRecord(self._on_record)
+        result = InterimStreamToTestRecord(self._on_record)
         result.startTestRun()
         self._protocol = SubunitProtocol(result)
         self._loop = None

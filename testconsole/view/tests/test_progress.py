@@ -41,8 +41,13 @@ class ProgressTest(ViewTest):
         """
         When states get updated, the counters are refreshed accordingly.
         """
-        self.repository.add_record(TestRecord.create("foo", status=SUCCESS))
-        self.repository.add_record(TestRecord.create("bar", status=INPROGRESS))
+        record1 = TestRecord.create("foo", status=EXISTS)
+        record2 = TestRecord.create("bar", status=EXISTS)
+        self.repository.add_record(record1)
+        self.repository.add_record(record2)
+        self.repository.update_record(record1.set(status=INPROGRESS))
+        self.repository.update_record(record1.set(status=SUCCESS))
+        self.repository.update_record(record2.set(status=INPROGRESS))
         canvas = self.progress.render((50,))
         self.assertThat(
             canvas.text[0], Contains(b("total: 2 done: 1 left: 1 - 50 %")))

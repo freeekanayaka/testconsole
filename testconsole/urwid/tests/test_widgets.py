@@ -25,7 +25,7 @@ class LoggerTest(TestCase):
         """
         self.logger.emit(LogRecord("root", INFO, None, None, "hi", None, None))
         self.assertEqual(
-            "21:57:03,220000 [root:INFO] hi", self.logger.text)
+            "2016-11-05 21:57:03,220 [root:INFO] hi", self.logger.text)
 
     def test_render_many(self):
         """
@@ -34,8 +34,8 @@ class LoggerTest(TestCase):
         self.logger.emit(LogRecord("root", INFO, None, None, "hi", None, None))
         self.logger.emit(LogRecord("root", INFO, None, None, "yo", None, None))
         self.assertEqual(
-            ["21:57:03,220000 [root:INFO] hi",
-             "21:57:03,220000 [root:INFO] yo"],
+            ["2016-11-05 21:57:03,220 [root:INFO] hi",
+             "2016-11-05 21:57:03,220 [root:INFO] yo"],
             self.logger.text.strip().split("\n"))
 
     def test_render_timestamp(self):
@@ -46,8 +46,8 @@ class LoggerTest(TestCase):
         time.sleep(1)
         self.logger.emit(LogRecord("root", INFO, None, None, "hi", None, None))
         self.assertEqual(
-            ["21:57:03,220000 [root:INFO] hi",
-             "21:57:04,220000 [root:INFO] hi"],
+            ["2016-11-05 21:57:03,220 [root:INFO] hi",
+             "2016-11-05 21:57:04,220 [root:INFO] hi"],
             self.logger.text.strip().split("\n"))
 
     def test_render_max_lines(self):
@@ -58,4 +58,4 @@ class LoggerTest(TestCase):
         self.logger.emit(LogRecord("root", INFO, None, None, "hi", None, None))
         self.logger.emit(LogRecord("root", INFO, None, None, "yo", None, None))
         self.assertEqual(
-            "21:57:03,220000 [root:INFO] yo", self.logger.text)
+            "2016-11-05 21:57:03,220 [root:INFO] yo", self.logger.text)

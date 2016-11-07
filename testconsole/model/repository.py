@@ -1,10 +1,16 @@
 import logging
 
-from testtools.testresult.real import STATES
+from testtools.testresult.real import (
+    FINAL_STATES,
+    STATES,
+)
 
 from obsub import event
 
-from testconsole.testtools import INPROGRESS
+from testconsole.testtools import (
+    INPROGRESS,
+    EXISTS,
+)
 
 
 class Repository(object):
@@ -12,8 +18,7 @@ class Repository(object):
 
     def __init__(self):
         self._index = {}
-        self._previous_status = {}
-        self._counts = {state: 0 for state in STATES}
+        self._counts = {state: 0 for state in STATES - {None}}
 
     def get_record(self, test_id):
         """Return the test case with the given ID."""
@@ -26,8 +31,10 @@ class Repository(object):
         overwritten.
         """
         logging.debug("Add test record '%s'", record.id)
-        if record.id in self._index:
-            logging.warning("Overwrite test record '%s'", record.id)
+        if record.id in self._index and record.runnable:
+            logging.warning(
+                "Runnable test record '%s' exists, skipping it", record.id)
+            return
         self.update_record(record)
 
     def update_record(self, record):
@@ -35,40 +42,79 @@ class Repository(object):
 
         :param record: A TestRecord that already exists in the repository.
         """
+        # TODO: The code below assumes that the packets in the subunit stream
+        # are ordered in a deterministic and predictable way. E.g.:
+        #
+        # - the stream starts with a series of packets with status 'exists'
+        #   each one associate with a test that is going to be run.
+        #
+        # - then test records sequentially transition from 'exists' to
+        #   'inprogress' and then a final status (each transition happens
+        #   only once and it's not interleaved with packets associated with
+        #   other test cases)
+        #
+        # - x-log and x-traceback packets have no status and have a test ID
+        #   that always matches the test ID of the currently 'inprogress' test
+        #   case.
+        #
+        # These assumption are consistent with subunit.v2.StreamResultToBytes
+        # and with subunitlogging.SubunitLoggingSuite.
+        #
+        # However at some point we might want to be more defensive, introducing
+        # logic to spot and possibly resolve inconsistencies.
         self._index[record.id] = record
 
         if record.status:
-            logging.debug("Counts: '%s' -> '%s'", record.id, record.status)
-            previous_status = self._previous_status.get(record.id)
-            if previous_status:
-                self._counts[previous_status] -= 1
-            self._previous_status[record.id] = record.status
-            self._counts[record.status] += 1
-            self.on_change_counts()
+            if record.status not in STATES:
+                logging.warning("Unknown status '%s'", record.status)
+                return
 
-            if record.status == INPROGRESS and previous_status != INPROGRESS:
-                self.on_change_inprogress_record(record)
+            # Runnable records are associated with actual test cases, so we
+            # want to update the counts (non runnable records are typically
+            # associated with fixtures and resources).
+            if record.runnable:
+                previous_status = self._get_previous_status(record.status)
+                if previous_status:
+                    self._counts[previous_status] -= 1
+                    assert self._counts[previous_status] >= 0
+                self._counts[record.status] += 1
+                self.on_counts_change()
 
-        if record.details and record.eof:
-            logging.debug("Got complete details for %s", record.last_file_name)
-            last_details = record.details[record.last_file_name]
-            self.on_change_details(record.last_file_name, last_details)
+            if record.status == INPROGRESS:
+                logging.debug("Start: '%s'", record.id)
+                self.on_record_start(record)
+            elif record.status in FINAL_STATES - {EXISTS}:
+                logging.debug("Finish: '%s' -> '%s'", record.id, record.status)
+
+        elif record.details:
+            logging.debug("Record '%s' has new progress data", record.id)
+            self.on_record_progress(record)
 
     def count_records(self, states=STATES):
-        """
-        Return the number of cases in the given states (default to all states).
+        """Return the number of runnable records in the given states.
+
+        The default is to return the count of all runnable records (i.e. in
+        all states).
         """
         return sum([
             self._counts[state] for state in self._counts if state in states])
 
     @event
-    def on_change_counts(self):
+    def on_counts_change(self):
         """Notifier triggering when status counts change."""
 
     @event
-    def on_change_inprogress_record(self, record):
+    def on_record_start(self, record):
         """Notifier triggering when a new test gets started."""
 
     @event
-    def on_change_details(self, file_name, details):
+    def on_record_progress(self, record):
         """Notifier triggering when receiving all packets for a detail."""
+
+    def _get_previous_status(self, status):
+        if status == EXISTS:
+            return None
+        elif status == INPROGRESS:
+            return EXISTS
+        elif status in FINAL_STATES - {EXISTS}:
+            return INPROGRESS
