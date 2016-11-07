@@ -4,7 +4,7 @@ from urwid import (
 )
 
 from testconsole.view import Progress
-from testconsole.view import CaseView
+from testconsole.view import Record
 
 
 class Header(WidgetWrap):
@@ -12,5 +12,5 @@ class Header(WidgetWrap):
     def __init__(self, repository):
         super(Header, self).__init__(Pile([
             Progress(repository),
-            CaseView(repository),
+            Record(repository),
         ]))

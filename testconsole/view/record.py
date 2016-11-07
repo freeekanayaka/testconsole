@@ -5,7 +5,7 @@ from urwid import (
 )
 
 
-class CaseView(WidgetWrap):
+class Record(WidgetWrap):
     """Render details about a single test case."""
 
     def __init__(self, repository):
@@ -13,11 +13,10 @@ class CaseView(WidgetWrap):
         self._text = Text("")
         self._box = LineBox(self._text)
         self._bind()
-        super(CaseView, self).__init__(self._box)
+        super(Record, self).__init__(self._box)
 
     def _bind(self):
-        self._repository.set_state += self._update_title
+        self._repository.on_change_inprogress_record += self._update_title
 
-    def _update_title(self, repository, test_id, test_status):
-        if test_status == "inprogress":
-            self._box.set_title(test_id)
+    def _update_title(self, repository, record):
+        self._box.set_title(record.id)

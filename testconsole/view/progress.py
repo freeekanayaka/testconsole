@@ -5,7 +5,7 @@ from urwid import (
 
 from testtools.testresult.real import FINAL_STATES
 
-from testconsole.model import EXISTS
+from testconsole.testtools import EXISTS
 
 
 class Progress(ProgressBar):
@@ -27,20 +27,20 @@ class Progress(ProgressBar):
             percentage=super(Progress, self).get_text())
 
     def _bind(self):
-        self._repository.set_state += self._sync
+        self._repository.on_change_counts += self._sync
 
-    def _sync(self, *args):
+    def _sync(self, repository):
         done = float(self._cases_done)
         total = float(self._cases_total)
         self.set_completion(int(done / total * 100))
 
     @property
     def _cases_total(self):
-        return self._repository.count_cases()
+        return self._repository.count_records()
 
     @property
     def _cases_done(self):
-        return self._repository.count_cases(FINAL_STATES - {EXISTS})
+        return self._repository.count_records(FINAL_STATES - {EXISTS})
 
     @property
     def _cases_left(self):

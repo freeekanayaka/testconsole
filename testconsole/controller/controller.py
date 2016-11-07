@@ -1,5 +1,4 @@
-import logging
-
+from testconsole.testtools import AsyncStreamToTestRecord
 from testconsole.controller.protocol import SubunitProtocol
 
 
@@ -15,7 +14,9 @@ class Controller(object):
         """
         self._watcher = watcher
         self._repository = repository
-        self._protocol = SubunitProtocol(self)
+        result = AsyncStreamToTestRecord(self._on_record)
+        result.startTestRun()
+        self._protocol = SubunitProtocol(result)
         self._loop = None
 
     def attach(self, loop):
@@ -25,15 +26,8 @@ class Controller(object):
         self._loop = loop
         self._watcher.attach(self._loop, self._protocol)
 
-    def status(self, test_id=None, test_status=None, test_tags=None,
-               runnable=True, file_name=None, file_bytes=None, eof=False,
-               mime_type=None, route_code=None, timestamp=None):
-
-        if test_status and not test_id:
-            logging.warning(
-                "Got packet with status '%s' and no test_id", test_status)
-
-        elif test_id:
-            if not self._repository.get_case(test_id):
-                self._repository.add_case(test_id)
-            self._repository.set_state(test_id, test_status)
+    def _on_record(self, record):
+        if not self._repository.get_record(record.id):
+            self._repository.add_record(record)
+        else:
+            self._repository.update_record(record)

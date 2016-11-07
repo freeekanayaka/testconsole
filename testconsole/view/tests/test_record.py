@@ -5,29 +5,29 @@ from testtools.matchers import (
     Not,
 )
 
-from testconsole.model import (
+from testconsole.testtools import (
     INPROGRESS,
     SUCCESS,
+    TestRecord,
 )
 from testconsole.view import (
     ViewTest,
-    CaseView,
+    Record,
 )
 
 
-class ProgressTest(ViewTest):
+class RecordTest(ViewTest):
 
     def setUp(self):
-        super(ProgressTest, self).setUp()
-        self.case = CaseView(self.repository)
+        super(RecordTest, self).setUp()
+        self.record = Record(self.repository)
 
     def test_render_status_inprogress(self):
         """
         When a test moves to the INPROGRESS, the box title gets updated.
         """
-        self.repository.add_case("foo")
-        self.repository.set_state("foo", INPROGRESS)
-        canvas = self.case.render((50,))
+        self.repository.add_record(TestRecord.create("foo", status=INPROGRESS))
+        canvas = self.record.render((50,))
         self.assertThat(canvas.text[0], Contains(b("foo")))
 
     def test_render_status_success(self):
@@ -35,7 +35,6 @@ class ProgressTest(ViewTest):
         When a test moves to a state that is not INPROGRESS, the box title
         stays the same.
         """
-        self.repository.add_case("foo")
-        self.repository.set_state("foo", SUCCESS)
-        canvas = self.case.render((50,))
+        self.repository.add_record(TestRecord.create("foo", status=SUCCESS))
+        canvas = self.record.render((50,))
         self.assertThat(canvas.text[0], Not(Contains(b("foo"))))

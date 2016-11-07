@@ -1,11 +1,17 @@
-from six import BytesIO
+from six import (
+    BytesIO,
+    b,
+)
 
 from subunit.v2 import StreamResultToBytes
 
 from urwid import MainLoop
 
 from testconsole.urwid import MemoryWatcher
-from testconsole.model import EXISTS
+from testconsole.testtools import (
+    EXISTS,
+    INPROGRESS,
+)
 from testconsole.view import (
     ViewTest,
     Console,
@@ -29,10 +35,23 @@ class ControllerTest(ViewTest):
         """
         self.encoder.status(test_id="foo", test_status=EXISTS)
         self.controller.attach(self.loop)
-        case = self.repository.get_case("foo")
-        self.assertEqual(1, self.repository.count_cases())
-        self.assertEqual("foo", case.id)
-        self.assertEqual(EXISTS, case.state)
+        record = self.repository.get_record("foo")
+        self.assertEqual(1, self.repository.count_records())
+        self.assertEqual("foo", record.id)
+        self.assertEqual(EXISTS, record.status)
+
+    def test_exists(self):
+        """
+        If packet with an existing test ID is received, the associated record
+        gets updated.
+        """
+        self.encoder.status(test_id="foo", test_status=EXISTS)
+        self.encoder.status(test_id="foo", test_status=INPROGRESS)
+        self.controller.attach(self.loop)
+        record = self.repository.get_record("foo")
+        self.assertEqual(1, self.repository.count_records())
+        self.assertEqual("foo", record.id)
+        self.assertEqual(INPROGRESS, record.status)
 
     def test_exists_no_test_id(self):
         """
@@ -41,7 +60,24 @@ class ControllerTest(ViewTest):
         """
         self.encoder.status(test_status="exists")
         self.controller.attach(self.loop)
-        self.assertEqual(0, self.repository.count_cases())
-        self.assertEqual(
-            "Got packet with status 'exists' and no test_id\n",
-            self.logger.output)
+        self.assertEqual(0, self.repository.count_records())
+
+    def test_on_change_details(self):
+        """
+        When all the packets for a details entry are received, an event is
+        triggered by the repository.
+        """
+        details = []
+
+        def on_change_details(repository, file_name, detail):
+            details.append((file_name, detail))
+
+        self.repository.on_change_details += on_change_details
+        self.encoder.status(test_id="foo", test_status=INPROGRESS)
+        self.encoder.status(
+            test_id="foo", file_name="log", file_bytes=b("hello"), eof=True)
+        self.controller.attach(self.loop)
+
+        [(file_name, detail)] = details
+        self.assertEqual("log", file_name)
+        self.assertEqual([b("hello")], list(detail.iter_bytes()))

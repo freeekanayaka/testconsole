@@ -2,10 +2,11 @@ from six import b
 
 from testtools.matchers import Contains
 
-from testconsole.model import (
+from testconsole.testtools import (
     EXISTS,
     SUCCESS,
     INPROGRESS,
+    TestRecord,
 )
 from testconsole.view import (
     ViewTest,
@@ -31,8 +32,7 @@ class ProgressTest(ViewTest):
         """
         If a single case gets added, the counters are updated accordingly.
         """
-        self.repository.add_case("foo")
-        self.repository.set_state("foo", EXISTS)
+        self.repository.add_record(TestRecord.create("foo", status=EXISTS))
         canvas = self.progress.render((50,))
         self.assertThat(
             canvas.text[0], Contains(b("total: 1 done: 0 left: 1 - 0 %")))
@@ -41,10 +41,8 @@ class ProgressTest(ViewTest):
         """
         When states get updated, the counters are refreshed accordingly.
         """
-        self.repository.add_case("foo")
-        self.repository.add_case("bar")
-        self.repository.set_state("bar", SUCCESS)
-        self.repository.set_state("foo", INPROGRESS)
+        self.repository.add_record(TestRecord.create("foo", status=SUCCESS))
+        self.repository.add_record(TestRecord.create("bar", status=INPROGRESS))
         canvas = self.progress.render((50,))
         self.assertThat(
             canvas.text[0], Contains(b("total: 2 done: 1 left: 1 - 50 %")))
